@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SplitSweldo — On-Chain Payroll Splitter</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Unbounded:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:        #020510;
+  --surface:   #060c1a;
+  --panel:     #0a1428;
+  --raised:    #0f1e38;
+  --border:    rgba(80,140,255,0.1);
+  --border-hi: rgba(80,160,255,0.45);
+  --green:     #4d9fff;
+  --green-lo:  rgba(77,159,255,0.08);
+  --green-mid: rgba(77,159,255,0.2);
+  --amber:     #e8a83a;
+  --amber-lo:  rgba(232,168,58,0.08);
+  --red:       #e05a5a;
+  --red-lo:    rgba(224,90,90,0.08);
+  --sky:       #a0c8ff;
+  --sky-lo:    rgba(160,200,255,0.08);
+  --text:      #c8dcf5;
+  --text-2:    #4a6880;
+  --text-3:    #1e3050;
+  --mono:      'Space Mono', monospace;
+  --serif:     'Unbounded', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+::selection {
+  background: rgba(77,159,255,0.35);
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(77,159,255,0.6);
+}
+
+::-moz-selection {
+  background: rgba(77,159,255,0.35);
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(77,159,255,0.6);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* ── Atmospheric background ───────────────────────────────── */
+.bg-atmosphere {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bg-atmosphere::before {
+  content: '';
+  position: absolute;
+  top: -30vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120vw;
+  height: 80vh;
+  background: radial-gradient(ellipse at 50% 0%,
+    rgba(77,159,255,0.07) 0%,
+    rgba(40,100,220,0.03) 40%,
+    transparent 70%);
+}
+
+.bg-atmosphere::after {
+  content: '';
+  position: absolute;
+  bottom: -20vh;
+  right: -20vw;
+  width: 80vw;
+  height: 80vh;
+  background: radial-gradient(ellipse,
+    rgba(77,159,255,0.04) 0%,
+    transparent 60%);
+}
+
+/* Fine dot grid */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 40%, black 0%, transparent 100%);
+}
+
+/* ── Layout ───────────────────────────────────────────────── */
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 28px 100px;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+header {
+  padding: 52px 0 44px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 44px;
+  gap: 20px;
+}
+
+.logo-block { display: flex; flex-direction: column; gap: 8px; }
+
+.wordmark {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  text-transform: uppercase;
+}
+
+.wordmark-split { color: var(--text); }
+.wordmark-sweldo { color: var(--green); }
+
+.tagline {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tagline::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--text-3);
+}
+
+.header-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+.net-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 7px 14px 7px 10px;
+  font-size: 11px;
+  color: var(--text-2);
+  letter-spacing: 0.05em;
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(77,159,255,0.8);
+  animation: throb 2.4s ease-in-out infinite;
+}
+
+@keyframes throb {
+  0%,100% { opacity:1; box-shadow: 0 0 8px rgba(77,159,255,0.8); }
+  50%     { opacity:0.5; box-shadow: 0 0 3px rgba(77,159,255,0.3); }
+}
+
+.stellar-badge {
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Step rail ────────────────────────────────────────────── */
+.step-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 5px;
+  overflow: hidden;
+}
+
+.step-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+}
+
+.step-btn:hover:not(.active) { color: var(--text); background: var(--panel); }
+
+.step-btn.active {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border-hi);
+  box-shadow: inset 0 1px 0 rgba(56,200,140,0.12);
+}
+
+.step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  transition: all 0.2s;
+}
+
+.step-btn.active .step-num {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--bg);
+}
+
+.step-btn.done .step-num {
+  background: var(--green-lo);
+  border-color: var(--green-mid);
+  color: var(--green);
+}
+
+/* Separator lines between steps */
+.step-sep {
+  width: 1px;
+  background: var(--border);
+  margin: 10px 0;
+  flex-shrink: 0;
+}
+
+/* ── Main grid ────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── Panels ───────────────────────────────────────────────── */
+.phase-panel { display: none; }
+.phase-panel.active { display: block; }
+
+/* ── Cards ────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 26px;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s;
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 20px; right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(77,159,255,0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.card:hover::after { opacity: 1; }
+
+.card-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-eyebrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.card-title {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.card-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.7;
+  margin-bottom: 22px;
+  max-width: 520px;
+}
+
+/* ── Fields ───────────────────────────────────────────────── */
+.field { margin-bottom: 13px; }
+
+.field label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 13px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.18s, background 0.18s;
+  appearance: none;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--border-hi);
+  background: var(--raised);
+}
+
+.field input::placeholder { color: var(--text-3); }
+
+/* ── Split rows ───────────────────────────────────────────── */
+.split-rows-wrap { margin-bottom: 4px; }
+
+.split-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 32px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  animation: rowIn 0.18s ease;
+}
+
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.split-row input[type="text"] {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.18s;
+  width: 100%;
+}
+
+.split-row input[type="text"]:focus { border-color: var(--border-hi); }
+
+.bps-field {
+  display: flex;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.18s;
+}
+
+.bps-field:focus-within { border-color: var(--border-hi); }
+
+.bps-field input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 9px 6px 9px 10px;
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  outline: none;
+  text-align: right;
+}
+
+.bps-unit {
+  font-size: 9px;
+  color: var(--text-3);
+  padding-right: 8px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.rm-btn {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  border: 1px solid rgba(224,90,90,0.18);
+  background: var(--red-lo);
+  color: var(--red);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+}
+
+.rm-btn:hover { background: rgba(224,90,90,0.18); }
+
+/* BPS progress bar */
+.bps-meter { margin: 18px 0 14px; }
+
+.bps-meter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.bps-total-val { font-weight: 500; transition: color 0.2s; }
+.bps-total-val.ok    { color: var(--green); }
+.bps-total-val.over  { color: var(--red); }
+.bps-total-val.under { color: var(--amber); }
+
+.bps-pct-val { color: var(--text-3); font-size: 11px; }
+
+.bps-track {
+  height: 3px;
+  background: var(--raised);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bps-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.25s ease, background 0.2s;
+}
+
+.bps-fill.ok    { background: var(--green); }
+.bps-fill.over  { background: var(--red); }
+.bps-fill.under { background: var(--amber); }
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 9px;
+  border: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: all 0.16s;
+  white-space: nowrap;
+}
+
+.btn-full { width: 100%; }
+
+.btn-primary {
+  background: var(--green);
+  color: var(--bg);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #6db0ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(77,159,255,0.3);
+}
+
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  font-size: 11px;
+}
+
+.btn-ghost:hover { border-color: var(--border-hi); color: var(--green); }
+
+.btn-amber {
+  background: var(--amber-lo);
+  color: var(--amber);
+  border: 1px solid rgba(232,168,58,0.25);
+}
+
+.btn-amber:hover { background: rgba(232,168,58,0.15); }
+
+.btn-row { display: flex; gap: 8px; margin-bottom: 10px; }
+
+/* ── Release button ───────────────────────────────────────── */
+.release-wrap { margin-top: 24px; }
+
+.btn-release {
+  width: 100%;
+  padding: 18px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.22s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-release::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 50% 120%, rgba(77,159,255,0.15), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-release:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 30px rgba(77,159,255,0.15), inset 0 0 0 1px rgba(77,159,255,0.1);
+  transform: translateY(-1px);
+}
+
+.btn-release:hover::before { opacity: 1; }
+
+.btn-release:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.release-caption {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+  margin-top: 12px;
+  line-height: 1.8;
+  text-transform: uppercase;
+}
+
+/* ── Fan-out visual ───────────────────────────────────────── */
+.fanout {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.fanout-source {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--green);
+  margin-bottom: 14px;
+  letter-spacing: -0.3px;
+}
+
+.fanout-arrows {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 8px 0 14px;
+  color: var(--text-3);
+  font-size: 13px;
+  letter-spacing: 8px;
+}
+
+.fanout-wallets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.fanout-wallet-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 10px;
+  color: var(--text-2);
+  min-width: 70px;
+}
+
+.fanout-wallet-pct {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1;
+  letter-spacing: -0.3px;
+}
+
+/* ── Status display ───────────────────────────────────────── */
+.status-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.status-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.status-row:last-child { border-bottom: none; }
+
+.status-key {
+  color: var(--text-3);
+  font-size: 11px;
+  min-width: 80px;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+
+.status-val { color: var(--text); word-break: break-all; }
+
+/* ── Wallet balance rows ──────────────────────────────────── */
+.wallet-bal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.wallet-bal-row:last-child { border-bottom: none; }
+
+.wallet-bal-addr {
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.wallet-bal-amount {
+  font-size: 13px;
+  color: var(--green);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Activity log ─────────────────────────────────────────── */
+.log-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 11px;
+}
+
+.log-entry {
+  display: flex;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+.log-entry:last-child { border-bottom: none; }
+
+.log-time {
+  color: var(--text-3);
+  flex-shrink: 0;
+  font-size: 10px;
+  padding-top: 1px;
+  letter-spacing: 0.03em;
+}
+
+.log-msg { color: var(--text-2); }
+.log-entry.ok .log-msg { color: var(--green); }
+.log-entry.err .log-msg { color: var(--red); }
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.sidebar { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 14px; }
+
+.sidebar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.sidebar-label {
+  font-size: 9px;
+  color: var(--text-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.funded-amount {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  letter-spacing: -0.5px;
+}
+
+.funded-unit {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-2);
+  font-style: normal;
+}
+
+.contract-id-val {
+  font-size: 10px;
+  color: var(--text-3);
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.sb-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+}
+
+.sb-rule:last-child { border-bottom: none; }
+
+.sb-rule-addr { color: var(--text-3); }
+.sb-rule-pct {
+  background: var(--green-lo);
+  border: 1px solid var(--green-mid);
+  color: var(--green);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+}
+
+.sb-actions { display: flex; flex-direction: column; gap: 8px; }
+
+/* ── Tags ─────────────────────────────────────────────────── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.tag-sky { background: var(--sky-lo); color: var(--sky); border: 1px solid rgba(77,157,224,0.2); }
+.tag-green { background: var(--green-lo); color: var(--green); border: 1px solid var(--green-mid); }
+
+/* ── Spinner ──────────────────────────────────────────────── */
+.spinner {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.15);
+  border-top-color: currentColor;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toasts ───────────────────────────────────────────────── */
+#toast-zone {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--text);
+  max-width: 340px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: toastIn 0.22s ease;
+  pointer-events: all;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error   { border-left: 3px solid var(--red); }
+.toast.info    { border-left: 3px solid var(--sky); }
+
+.toast-icon { flex-shrink: 0; margin-top: 1px; font-size: 13px; }
+
+/* ── Divider ──────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+  .step-btn span.label { display: none; }
+  .step-sep { display: none; }
+}
+
+/* ── Page load animation ──────────────────────────────────── */
+.app { animation: fadeUp 0.4s ease both; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card { animation: cardIn 0.3s ease both; }
+.card:nth-child(2) { animation-delay: 0.06s; }
+.card:nth-child(3) { animation-delay: 0.12s; }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-atmosphere"></div>
+<div class="bg-grid"></div>
+
+<div class="app">
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo-block">
+      <div class="wordmark">
+        <span class="wordmark-split">Split</span><span class="wordmark-sweldo">Sweldo</span>
+      </div>
+      <div class="tagline">On-chain payroll splitter · Stellar / Soroban</div>
+    </div>
+    <div class="header-right">
+      <div class="stellar-badge">Stellar</div>
+      <div class="net-pill">
+        <div class="pulse-dot"></div>
+        <span id="network-label">testnet</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Step rail ── -->
+  <div class="step-rail">
+    <button class="step-btn active" onclick="showPhase('setup')">
+      <span class="step-num">1</span>
+      <span class="label">Setup</span>
+    </button>
+    <div class="step-sep"></div>
+    <button class="step-btn" onclick="showPhase('fund')">
+      <span class="step-num">2</span>
+      <span class="label">Fund Payroll</span>
+    </button>
+    <div class="step-sep"></div>
+    <button class="step-btn" onclick="showPhase('release')">
+      <span class="step-num">3</span>
+      <span class="label">Payday</span>
+    </button>
+    <div class="step-sep"></div>
+    <button class="step-btn" onclick="showPhase('status')">
+      <span class="step-num">4</span>
+      <span class="label">Status</span>
+    </button>
+  </div>
+
+  <div class="grid">
+    <div class="main-col">
+
+      <!-- ══ PHASE 1: SETUP ══ -->
+      <div class="phase-panel active" id="panel-setup">
+
+        <div class="card">
+          <div class="card-eyebrow">Phase 1a — One-time deployment</div>
+          <div class="card-title">Initialize Contract</div>
+          <p class="card-desc">Bind the employer and worker addresses to this Soroban contract. This is called exactly once after deployment.</p>
+
+          <div class="field">
+            <label>Contract ID</label>
+            <input type="text" id="contract-id" placeholder="C... (paste your deployed contract ID)"/>
+          </div>
+          <div class="field">
+            <label>Employer Address</label>
+            <input type="text" id="employer-addr" placeholder="G..."/>
+          </div>
+          <div class="field">
+            <label>Worker Address</label>
+            <input type="text" id="worker-addr" placeholder="G..."/>
+          </div>
+
+          <button class="btn btn-primary btn-full" onclick="initContract()">
+            <span id="init-spinner" class="spinner" style="display:none"></span>
+            Initialize Contract
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-eyebrow">Phase 1b — Worker configuration</div>
+          <div class="card-title">Set Split Rules</div>
+          <p class="card-desc">Define destination wallets and their percentage allocations. Basis points (bps) must total exactly 10,000 — that's 100%.</p>
+
+          <div class="split-rows-wrap" id="split-rows"></div>
+
+          <div class="bps-meter">
+            <div class="bps-meter-head">
+              <span class="bps-total-val under" id="bps-total-label">0 / 10000 bps</span>
+              <span class="bps-pct-val" id="bps-pct-label">0.0%</span>
+            </div>
+            <div class="bps-track">
+              <div class="bps-fill under" id="bps-fill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="addSplitRow()">+ Add wallet</button>
+          </div>
+
+          <div class="field">
+            <label>Token Address (USDC)</label>
+            <input type="text" id="token-addr" value="CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"/>
+          </div>
+
+          <button class="btn btn-primary btn-full" onclick="setSplitRules()">
+            <span id="rules-spinner" class="spinner" style="display:none"></span>
+            Save Split Rules On-Chain
+          </button>
+        </div>
+
+      </div><!-- /panel-setup -->
+
+      <!-- ══ PHASE 2: FUND ══ -->
+      <div class="phase-panel" id="panel-fund">
+        <div class="card">
+          <div class="card-eyebrow">Phase 2 — Employer locks payroll</div>
+          <div class="card-title">Fund Payroll</div>
+          <p class="card-desc">Transfer the monthly salary into the contract. Once locked, the employer cannot withdraw — it can only be released atomically to the split wallets.</p>
+
+          <div class="field">
+            <label>Amount (USDC)</label>
+            <input type="number" id="fund-amount" placeholder="e.g. 1000" step="0.01" min="0" oninput="updateFundPreview()"/>
+          </div>
+
+          <div class="fanout" id="fund-preview" style="display:none">
+            <div class="fanout-source" id="fp-total">—</div>
+            <div class="fanout-arrows">↓ &nbsp; ↓ &nbsp; ↓</div>
+            <div class="fanout-wallets" id="fp-wallets"></div>
+          </div>
+
+          <button class="btn btn-amber btn-full" onclick="fundPayroll()" style="margin-top:4px">
+            <span id="fund-spinner" class="spinner" style="display:none"></span>
+            Lock USDC in Contract
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ PHASE 3: RELEASE ══ -->
+      <div class="phase-panel" id="panel-release">
+        <div class="card">
+          <div class="card-eyebrow">Phase 3 — Payday</div>
+          <div class="card-title">Release Payroll</div>
+          <p class="card-desc">Trigger the atomic fan-out. Soroban reads the stored split rules and transfers USDC to all wallets simultaneously in a single transaction — the money is split before the worker can touch the full amount.</p>
+
+          <div class="fanout">
+            <div class="fanout-source" id="release-funded-label">Loading…</div>
+            <div class="fanout-arrows">↓ &nbsp; ↓ &nbsp; ↓</div>
+            <div class="fanout-wallets" id="release-wallets">
+              <div style="color:var(--text-3);font-size:11px">Set split rules first</div>
+            </div>
+          </div>
+
+          <div class="release-wrap">
+            <button class="btn-release" onclick="releasePayroll()">
+              ⚡ Release Payroll
+            </button>
+            <div class="release-caption">
+              Atomic · Irreversible · Under 5 seconds<br/>
+              No interception possible after this point
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PHASE 4: STATUS ══ -->
+      <div class="phase-panel" id="panel-status">
+
+        <div class="card">
+          <div class="card-eyebrow">Contract status</div>
+          <div class="card-title">Live Status</div>
+          <p class="card-desc">Current state of the SplitSweldo contract on Stellar testnet.</p>
+
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="loadStatus()">↻ Refresh</button>
+          </div>
+
+          <div id="status-content" class="status-grid" style="color:var(--text-2);font-size:12px">
+            Click refresh to load contract state.
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="card-eyebrow" style="margin-bottom:12px">Wallet balances</div>
+          <div id="balance-rows">
+            <div style="color:var(--text-3);font-size:11px">No wallets tracked yet.</div>
+          </div>
+          <div class="btn-row" style="margin-top:14px">
+            <button class="btn btn-ghost" onclick="checkBalances()">Check Balances</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-eyebrow">Activity log</div>
+          <div class="log-box" id="log-wrap">
+            <div style="color:var(--text-3);font-size:11px">No activity yet.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /main-col -->
+
+    <!-- ── Sidebar ── -->
+    <div class="sidebar">
+
+      <div class="sidebar-card">
+        <div class="sidebar-label">Funded Amount</div>
+        <div class="funded-amount">
+          <span id="sb-funded">—</span>
+          <span class="funded-unit">USDC</span>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="sidebar-label">Contract ID</div>
+        <div class="contract-id-val" id="sb-contract">Not set</div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="sidebar-label">Split Rules</div>
+        <div id="sb-rules" style="margin-top:2px">
+          <div style="color:var(--text-3);font-size:11px">Not configured</div>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="sidebar-label">Quick Actions</div>
+        <div class="sb-actions">
+          <button class="btn btn-ghost" style="font-size:11px;width:100%" onclick="loadStatus()">↻ Refresh status</button>
+          <button class="btn btn-ghost" style="font-size:11px;width:100%" onclick="showPhase('release')">⚡ Go to Payday</button>
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+
+  </div><!-- /grid -->
+</div><!-- /app -->
+
+<div id="toast-zone"></div>
+
+<script>
+const API = 'http://localhost:3001/api';
+let splitRules = [];
+let contractId = '';
+
+// ── Phase navigation ───────────────────────────────────────────────────────
+function showPhase(name) {
+  document.querySelectorAll('.phase-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+
+  document.getElementById('panel-' + name).classList.add('active');
+  const tabs = ['setup','fund','release','status'];
+  document.querySelectorAll('.step-btn')[tabs.indexOf(name)].classList.add('active');
+
+  if (name === 'release') refreshReleasePanel();
+  if (name === 'status')  loadStatus();
+}
+
+// ── Split rows ─────────────────────────────────────────────────────────────
+function addSplitRow(wallet = '', bps = '') {
+  const container = document.getElementById('split-rows');
+  const id = 'row-' + Date.now();
+  const row = document.createElement('div');
+  row.className = 'split-row';
+  row.id = id;
+  row.innerHTML = `
+    <input type="text" placeholder="G... wallet address" value="${wallet}" class="wallet-input" oninput="updateBpsMeter()"/>
+    <div class="bps-field">
+      <input type="number" placeholder="5000" min="1" max="10000" maxlength="5" value="${bps}" class="bps-num" oninput="if(this.value>10000)this.value=10000; updateBpsMeter()"/>
+      <span class="bps-unit">bps</span>
+    </div>
+    <button class="rm-btn" onclick="removeRow('${id}')">×</button>
+  `;
+  container.appendChild(row);
+  updateBpsMeter();
+}
+
+function removeRow(id) {
+  document.getElementById(id)?.remove();
+  updateBpsMeter();
+}
+
+function updateBpsMeter() {
+  const inputs = document.querySelectorAll('.bps-num');
+  const total = Array.from(inputs).reduce((s, i) => s + (parseInt(i.value) || 0), 0);
+  const pct = Math.min((total / 10000) * 100, 100);
+  const cls = total === 10000 ? 'ok' : total > 10000 ? 'over' : 'under';
+
+  const fill  = document.getElementById('bps-fill');
+  const label = document.getElementById('bps-total-label');
+  const pctEl = document.getElementById('bps-pct-label');
+
+  fill.className = 'bps-fill ' + cls;
+  fill.style.width = pct + '%';
+  label.className = 'bps-total-val ' + cls;
+  label.textContent = `${total} / 10000 bps`;
+  pctEl.textContent = (total / 100).toFixed(1) + '%';
+  updateSidebar();
+}
+
+function getSplitData() {
+  return Array.from(document.querySelectorAll('.split-row')).map(row => ({
+    wallet: row.querySelector('.wallet-input').value.trim(),
+    bps: parseInt(row.querySelector('.bps-num').value) || 0,
+  })).filter(r => r.wallet);
+}
+
+// ── Initialize ─────────────────────────────────────────────────────────────
+async function initContract() {
+  const id       = document.getElementById('contract-id').value.trim();
+  const employer = document.getElementById('employer-addr').value.trim();
+  const worker   = document.getElementById('worker-addr').value.trim();
+  if (!id || !employer || !worker) return toast('Fill in all fields', 'error');
+
+  contractId = id;
+  document.getElementById('sb-contract').textContent = id;
+
+  setLoading('init-spinner', true);
+  try {
+    const res = await post('/initialize', { employer, worker });
+    toast(res.message || 'Contract initialized!', 'success');
+    log('Contract initialized', 'ok');
+    markDone(0);
+  } catch (e) {
+    toast(e, 'error');
+    log('Init failed: ' + e, 'err');
+  }
+  setLoading('init-spinner', false);
+}
+
+// ── Set split rules ────────────────────────────────────────────────────────
+async function setSplitRules() {
+  const rules = getSplitData();
+  const token = document.getElementById('token-addr').value.trim();
+  const total = rules.reduce((s, r) => s + r.bps, 0);
+
+  if (total !== 10000) return toast(`BPS total is ${total}, must be 10000`, 'error');
+  if (rules.length < 1)  return toast('Add at least one wallet', 'error');
+
+  setLoading('rules-spinner', true);
+  try {
+    const res = await post('/set-split-rules', { token, rules });
+    toast(res.message || 'Split rules saved!', 'success');
+    log('Split rules saved on-chain', 'ok');
+    splitRules = rules;
+    updateSidebar();
+    markDone(0);
+  } catch (e) {
+    toast(e, 'error');
+    log('Set rules failed: ' + e, 'err');
+  }
+  setLoading('rules-spinner', false);
+}
+
+// ── Fund payroll ───────────────────────────────────────────────────────────
+async function fundPayroll() {
+  const amount = parseFloat(document.getElementById('fund-amount').value);
+  if (!amount || amount <= 0) return toast('Enter a valid USDC amount', 'error');
+
+  setLoading('fund-spinner', true);
+  try {
+    const res = await post('/fund-payroll', { amount_usdc: amount });
+    toast(res.message || 'Payroll funded!', 'success');
+    log(`Funded ${amount} USDC`, 'ok');
+    document.getElementById('sb-funded').textContent = amount.toLocaleString();
+    markDone(1);
+  } catch (e) {
+    toast(e, 'error');
+    log('Fund failed: ' + e, 'err');
+  }
+  setLoading('fund-spinner', false);
+}
+
+// ── Release payroll ────────────────────────────────────────────────────────
+async function releasePayroll() {
+  const btn = document.querySelector('.btn-release');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="display:inline-block;margin-right:8px;vertical-align:middle"></span>Releasing…';
+
+  try {
+    const res = await post('/release-payroll', {});
+    toast('🎉 ' + (res.message || 'Payroll released!'), 'success');
+    log('Payroll released — atomic fan-out complete', 'ok');
+    document.getElementById('sb-funded').textContent = '0';
+    markDone(2);
+  } catch (e) {
+    toast(e, 'error');
+    log('Release failed: ' + e, 'err');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '⚡ Release Payroll';
+}
+
+// ── Load status ────────────────────────────────────────────────────────────
+async function loadStatus() {
+  const el = document.getElementById('status-content');
+  el.innerHTML = '<div style="color:var(--text-3)">Loading…</div>';
+  try {
+    const data = await get('/status');
+    el.innerHTML = `
+      <div class="status-grid">
+        <div class="status-row"><span class="status-key">Contract</span><span class="status-val" style="font-size:10px">${data.contract_id || 'Not set'}</span></div>
+        <div class="status-row"><span class="status-key">Network</span><span class="status-val"><span class="tag tag-sky">${data.network}</span></span></div>
+        <div class="status-row"><span class="status-key">Employer</span><span class="status-val" style="font-size:10px">${data.employer || '—'}</span></div>
+        <div class="status-row"><span class="status-key">Worker</span><span class="status-val" style="font-size:10px">${data.worker || '—'}</span></div>
+        <div class="status-row"><span class="status-key">Funded</span><span class="status-val"><span style="color:var(--green);font-weight:500">${data.funded_usdc} USDC</span></span></div>
+      </div>
+    `;
+    document.getElementById('sb-funded').textContent = data.funded_usdc;
+    document.getElementById('sb-contract').textContent = data.contract_id || 'Not set';
+  } catch (e) {
+    el.innerHTML = `<span style="color:var(--red);font-size:12px">Backend offline — start server on port 3001</span>`;
+  }
+}
+
+async function checkBalances() {
+  const rules = getSplitData();
+  if (!rules.length) return toast('No wallets configured yet', 'info');
+  const container = document.getElementById('balance-rows');
+  container.innerHTML = '<div style="color:var(--text-3)">Loading…</div>';
+  try {
+    const results = await Promise.all(rules.map(r => get('/balance/' + r.wallet)));
+    container.innerHTML = results.map((b, i) => `
+      <div class="wallet-bal-row">
+        <div>
+          <div style="font-size:11px;color:var(--text-2)">Wallet ${i + 1}</div>
+          <div class="wallet-bal-addr">${b.address?.slice(0,20)}…</div>
+        </div>
+        <div class="wallet-bal-amount">${b.balance_usdc} USDC</div>
+      </div>
+    `).join('');
+  } catch (e) {
+    container.innerHTML = `<span style="color:var(--red);font-size:11px">${e}</span>`;
+  }
+}
+
+function refreshReleasePanel() {
+  const rules = getSplitData();
+  const fundedAmt = parseFloat(document.getElementById('fund-amount').value) || 0;
+  document.getElementById('release-funded-label').textContent =
+    fundedAmt > 0 ? fundedAmt.toLocaleString() + ' USDC ready' : '? USDC ready';
+
+  const walletsEl = document.getElementById('release-wallets');
+  if (rules.length) {
+    walletsEl.innerHTML = rules.map(r => `
+      <div class="fanout-wallet-chip">
+        <span class="fanout-wallet-pct">${(r.bps / 100).toFixed(0)}%</span>
+        <span style="color:var(--text-3)">${r.wallet.slice(0, 6)}…</span>
+      </div>
+    `).join('');
+  } else {
+    walletsEl.innerHTML = '<div style="color:var(--text-3);font-size:11px">Set split rules first</div>';
+  }
+}
+
+function updateFundPreview() {
+  const amount = parseFloat(document.getElementById('fund-amount').value);
+  const preview = document.getElementById('fund-preview');
+  const rules = getSplitData();
+  if (!amount || !rules.length) { preview.style.display = 'none'; return; }
+  preview.style.display = 'block';
+  document.getElementById('fp-total').textContent = amount.toLocaleString() + ' USDC locked';
+  document.getElementById('fp-wallets').innerHTML = rules.map(r => {
+    const share = ((r.bps / 10000) * amount).toFixed(2);
+    return `
+      <div class="fanout-wallet-chip">
+        <span class="fanout-wallet-pct">${(r.bps / 100).toFixed(0)}%</span>
+        <span style="color:var(--text-2)">${share} USDC</span>
+        <span style="color:var(--text-3)">${r.wallet.slice(0, 6)}…</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── Sidebar ────────────────────────────────────────────────────────────────
+function updateSidebar() {
+  const rules = getSplitData();
+  const el = document.getElementById('sb-rules');
+  if (rules.length) {
+    el.innerHTML = rules.map(r => `
+      <div class="sb-rule">
+        <span class="sb-rule-addr">${r.wallet.slice(0, 10)}…</span>
+        <span class="sb-rule-pct">${(r.bps / 100).toFixed(0)}%</span>
+      </div>
+    `).join('');
+  }
+}
+
+function markDone(stepIndex) {
+  const btns = document.querySelectorAll('.step-btn');
+  if (btns[stepIndex]) btns[stepIndex].classList.add('done');
+}
+
+// ── API helpers ────────────────────────────────────────────────────────────
+async function get(path) {
+  const r = await fetch(API + path);
+  const data = await r.json();
+  if (!r.ok) throw data.error || 'Request failed';
+  return data;
+}
+
+async function post(path, body) {
+  const r = await fetch(API + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await r.json();
+  if (!r.ok) throw data.error || 'Request failed';
+  return data;
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const icons = { success: '✓', error: '✕', info: 'i' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toast-zone').appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+// ── Log ────────────────────────────────────────────────────────────────────
+function log(msg, type = '') {
+  const wrap = document.getElementById('log-wrap');
+  const placeholder = wrap.querySelector('div[style]');
+  if (placeholder) wrap.innerHTML = '';
+  const now = new Date().toLocaleTimeString('en-PH', { hour12: false });
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.innerHTML = `<span class="log-time">${now}</span><span class="log-msg">${msg}</span>`;
+  wrap.insertBefore(entry, wrap.firstChild);
+}
+
+function setLoading(id, on) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = on ? 'inline-block' : 'none';
+}
+
+// ── Init page ──────────────────────────────────────────────────────────────
+addSplitRow('', 5000);
+addSplitRow('', 3000);
+addSplitRow('', 2000);
+updateBpsMeter();
+</script>
+</body>
+</html>
