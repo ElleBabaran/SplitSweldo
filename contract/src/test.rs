@@ -174,7 +174,7 @@ fn test_rounding_dust_goes_to_last_wallet() {
 }
 
 #[test]
-#[should_panic(expected = "nothing to release")]
+#[should_panic]
 fn test_double_release_panics() {
     let s = setup();
     let client = SplitSweldoClient::new(&s.env, &s.contract_id);

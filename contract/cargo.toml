@@ -1,5 +1,5 @@
 [package]
-name = "SplitSweldo"
+name = "split_sweldo"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -18,10 +18,11 @@ codegen-units = 1
 lto = true
 
 [dependencies]
-soroban-sdk = { version = "21.0.0", features = ["alloc"] }
+soroban-sdk = { version = "22.0.0", features = ["alloc"] }
 
 [dev-dependencies]
-soroban-sdk = { version = "21.0.0", features = ["testutils"] }
+soroban-sdk = { version = "22.0.0", features = ["testutils"] }
 
 [features]
 testutils = ["soroban-sdk/testutils"]
+

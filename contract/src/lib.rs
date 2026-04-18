@@ -43,10 +43,12 @@ impl SplitSweldo {
 
     /// Called once by the deployer to bind the employer and worker addresses.
     pub fn initialize(env: Env, employer: Address, worker: Address) {
+        employer.require_auth(); // ← AUTH CHECK FIRST (fixed)
+
         if env.storage().instance().has(&DataKey::Initialized) {
             panic!("already initialized");
         }
-        employer.require_auth();
+
         env.storage().instance().set(&DataKey::Employer, &employer);
         env.storage().instance().set(&DataKey::Worker, &worker);
         env.storage().instance().set(&DataKey::Initialized, &true);
@@ -200,3 +202,6 @@ impl SplitSweldo {
         env.storage().instance().get(&DataKey::Worker)
     }
 }
+
+#[cfg(test)]
+mod test;
